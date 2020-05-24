@@ -1,4 +1,4 @@
-#include "vk_device.h"
+#include <vkcl/vk_device.h>
 
 namespace vkcl {
 

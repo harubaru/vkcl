@@ -2,8 +2,7 @@
 #define VK_BUFFER_H
 
 #include <vulkan/vulkan.h>
-
-#include "../util/util_exception.h"
+#include "util_exception.h"
 #include "vk_device.h"
 
 #include <vector>

@@ -3,8 +3,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include "../util/util_exception.h"
-#include "../util/util_logging.h"
+#include "util_exception.h"
+#include "util_logging.h"
 #include "vk_instance.h"
 
 #include <vector>

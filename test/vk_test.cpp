@@ -1,5 +1,4 @@
-#include "../src/vk/vk_buffer.h"
-#include "../src/vk/vk_shader.h"
+#include <vkcl/vkcl.h>
 
 #include <cstdio>
 #include <string>
@@ -10,9 +9,6 @@
 
 int main()
 {
-	FILE *fp = fopen("./test/b", "w");
-	fclose(fp);
-
 	std::cout << "Device allocation test - ";
 	std::vector<vkcl::Device> devices = vkcl::QueryAllDevices();
 	std::cout << "Success\n";
@@ -64,7 +60,7 @@ int main()
 		std::cout << "Compute Shader Test\n";
 
 		const int BUFFER_COUNT = 3;
-		const int TEST_SIZE = 0x10000000;
+		const int TEST_SIZE = 0xF;
 
 		vkcl::Buffer buffers[BUFFER_COUNT];
 		for (auto i = 0; i < BUFFER_COUNT; i++) {
@@ -90,7 +86,7 @@ int main()
 			return -1;
 		}
 
-	/*	for (int i = 1; i < BUFFER_COUNT; i++) {
+		for (int i = 1; i < BUFFER_COUNT; i++) {
 			std::cout << "Buffer " << i << " contents: ";
 			testdata = (float *)buffers[i].GetData();
 			for (int i = 0; i < TEST_SIZE; i++) {
@@ -98,7 +94,7 @@ int main()
 			}
 			std::cout << std::endl;
 		}
-*/
+
 		std::cout << "Success\n";
 
 		shader.Delete();

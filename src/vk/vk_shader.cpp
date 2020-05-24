@@ -1,4 +1,4 @@
-#include "vk_shader.h"
+#include <vkcl/vk_shader.h>
 
 namespace vkcl {
 	

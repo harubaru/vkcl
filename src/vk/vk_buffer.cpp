@@ -1,4 +1,4 @@
-#include "vk_buffer.h"
+#include <vkcl/vk_buffer.h>
 
 namespace vkcl {
 

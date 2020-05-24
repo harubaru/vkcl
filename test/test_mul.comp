@@ -21,8 +21,8 @@ uvec3 pos = gl_WorkGroupID;
 
 void main()
 {
-//	outbuf.Data[gl_GlobalInvocationID.x] = pow(2, pos.x);
-//	tertbuf.Data[gl_GlobalInvocationID.x] = pow(2, pos.x);
-	outbuf.Data[gl_GlobalInvocationID.x] = sqrt(pos.x);
-	tertbuf.Data[gl_GlobalInvocationID.x] = sqrt(pos.x);
+	outbuf.Data[gl_GlobalInvocationID.x] = pow(2, pos.x);
+	tertbuf.Data[gl_GlobalInvocationID.x] = pow(2, pos.x);
+//	outbuf.Data[gl_GlobalInvocationID.x] = sqrt(pos.x);
+//	tertbuf.Data[gl_GlobalInvocationID.x] = sqrt(pos.x);
 }
