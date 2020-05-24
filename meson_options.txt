@@ -1,0 +1,2 @@
+option('enable_debug', type : 'boolean', value : false, description : 'Enables debugging symbols and Vulkan validation layers.')
+option('enable_test',  type : 'boolean', value : false, description : 'Enables the test program')
