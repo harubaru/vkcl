@@ -238,6 +238,7 @@ namespace vkcl {
 
 		vkQueueSubmit(dev.getComputeQueue(), 1, &submitinfo, fence);
 		vkWaitForFences(dev.get(), 1, &fence, VK_TRUE, UINT64_MAX);
+		vkResetFences(dev.get(), 1, &fence);
 	}
 
 }

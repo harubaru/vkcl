@@ -150,7 +150,7 @@ namespace vkcl {
 		VkCommandPoolCreateInfo PoolInfo = {};
 		PoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		PoolInfo.queueFamilyIndex = QueueFamilyIndices[0];
-		PoolInfo.flags = 0;
+		PoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 		if (vkCreateCommandPool(device, &Pool_ShortLivedInfo, nullptr, &Pool_ShortLived) != VK_SUCCESS) {
 			Pool_ShortLived = VK_NULL_HANDLE;
