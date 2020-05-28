@@ -6,7 +6,7 @@ A library written in C++ that is focused on making compute with Vulkan a lot les
 - [Meson](http://mesonbuild.com/) Version 0.47 or higher
 - Any C++ Compiler
 
-## Test Requirements:
+### Test Requirements:
 - [glslang](https://github.com/KhronosGroup/glslang) for compiling SPIR-V Shaders
 
 ### Manual Compilation:
