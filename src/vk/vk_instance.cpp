@@ -53,7 +53,7 @@ namespace vkcl {
 		appInfo.pApplicationName = "vkcl";
 		appInfo.applicationVersion = 0;
 		appInfo.pEngineName = "vkcl";
-		appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
+		appInfo.engineVersion = VK_MAKE_VERSION(0, 2, 0);
 		appInfo.apiVersion = VK_MAKE_VERSION(1, 1, 0);
 
 		VkInstanceCreateInfo instInfo = {};
