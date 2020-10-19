@@ -139,6 +139,8 @@ namespace vkcl {
 		if (vkCreateDevice(PhysicalDevice, &DevCreateInfo, nullptr, &device) != VK_SUCCESS) {
 			throw vkcl::util::Exception("Failed to create device");
 		}
+//		volkLoadDeviceTable(&table, device);
+
 		vkGetDeviceQueue(device, QueueFamilyIndices[0], 0, &ComputeQueue);
 		vkGetDeviceQueue(device, QueueFamilyIndices[1], 0, &TransferQueue);
 

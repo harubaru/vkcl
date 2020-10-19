@@ -1,7 +1,7 @@
 #ifndef VK_DEVICE_H
 #define VK_DEVICE_H
 
-#include <vulkan/vulkan.h>
+#include <vkcl/volk.h>
 
 #include "util_exception.h"
 #include "util_logging.h"
@@ -37,6 +37,8 @@ namespace vkcl {
 		inline VkCommandPool getShortCommandPool() { return Pool_ShortLived; } // Command pool for short lived command buffers
 		inline VkCommandPool getCommandPool() { return Pool; }
 		inline uint32_t *getQueueFamilyIndices() { return QueueFamilyIndices; } // [0] = Compute, [1] = Transfer
+
+		inline VolkDeviceTable getDeviceTable() { return table; }
 	
 		void operator=(const Device &devb);
 	protected:
@@ -50,6 +52,8 @@ namespace vkcl {
 		uint32_t QueueFamilyIndices[2];
 		uint32_t id;
 		std::string vendorname;
+
+		VolkDeviceTable table;
 	};
 
 	std::vector<vkcl::Device> QueryAllDevices();

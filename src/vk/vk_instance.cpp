@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+extern VkResult volkInitialize(void);
+
 namespace vkcl {
 
 	VkResult __CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger)
@@ -46,6 +48,9 @@ namespace vkcl {
 			return;
 		else
 			Loaded = true;
+		
+		if (volkInitialize() != VK_SUCCESS)
+			throw vkcl::util::Exception("Failed to create instance");
 		
 		VkApplicationInfo appInfo = {};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -99,6 +104,9 @@ namespace vkcl {
 		if (vkCreateInstance(&instInfo, nullptr, &instance) != VK_SUCCESS) {
 			throw vkcl::util::Exception("Failed to create instance");
 		}
+
+//		volkLoadInstanceOnly(instance);
+		volkLoadInstance(instance);
 
 #ifdef _DEBUG
 		// setup debug messenger

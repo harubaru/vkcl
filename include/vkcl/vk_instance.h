@@ -1,7 +1,7 @@
 #ifndef VK_INSTANCE_H
 #define VK_INSTANCE_H
 
-#include <vulkan/vulkan.h>
+#include <vkcl/volk.h>
 
 #include "util_exception.h"
 

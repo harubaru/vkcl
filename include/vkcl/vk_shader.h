@@ -1,8 +1,6 @@
 #ifndef VK_SHADER_H
 #define VK_SHADER_H
 
-#include <vulkan/vulkan.h>
-
 #include "util_exception.h"
 #include "vk_device.h"
 #include "vk_buffer.h"
