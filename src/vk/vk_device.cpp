@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <vkcl/vk_device.h>
 
 namespace vkcl {
@@ -30,6 +31,39 @@ namespace vkcl {
 		}
 
 		return QueueFamilyIndex;
+	}
+
+	static uint32_t *GetSpv(uint32_t *len, const std::string fp)
+	{
+		FILE *f = fopen(fp.c_str(), "rb");
+		if ((!f) || (!len)) {
+			throw vkcl::util::Exception(std::string("Could not open SPIR-V file: ") + fp);
+			return nullptr;
+		}
+
+		// filesize
+		fseek(f, 0, SEEK_END);
+		uint32_t size = (unsigned)ftell(f);
+		fseek(f, 0, SEEK_SET);
+		uint32_t size_padded = (uint32_t)ceil(size / 4.0) * 4;
+		*len = size_padded;
+
+		// read file
+		char *data = (char *)malloc(size_padded);
+		if (data == NULL) {
+			throw vkcl::util::Exception(std::string("Could not allocate data for SPIR-V file: ") + fp);
+			return nullptr;
+		}
+
+		fread(data, size, 1, f);
+		fclose(f);
+
+		// pad data
+		for (auto i = size; i < size_padded; i++) {
+			data[i] = 0;
+		}
+
+		return (uint32_t *)data;		
 	}
 
 	std::vector<VkPhysicalDevice> QueryPhysicalDevices(VkInstance instance)
@@ -190,6 +224,9 @@ namespace vkcl {
 
 	void Device::Delete()
 	{
+		for (auto &i : buffers)
+			DeleteBuffer(i);
+
 		vmaDestroyAllocator(allocator);
 
 		if (Pool_ShortLived != VK_NULL_HANDLE)
@@ -322,11 +359,20 @@ namespace vkcl {
 
 		CreateVKBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buf->devbuffer, buf->devalloc, &buf->devinfo);
 
+		buffers.push_back(buf);
+
 		return buf;
 	}
 
 	void Device::DeleteBuffer(Buffer *buffer)
 	{
+		for (size_t i = 0; i < buffers.size(); i++) {
+			if (buffers[i] == buffer) {
+				buffers.erase(buffers.begin() + i);
+				break;
+			}
+		}
+
 		vmaDestroyBuffer(allocator, buffer->devbuffer, buffer->devalloc);
 		delete buffer;
 	}
@@ -363,6 +409,205 @@ namespace vkcl {
 	void Device::ReleaseData(void *data)
 	{
 		free(data);
+	}
+
+	
+	// Compute Operations
+
+	Shader *Device::CreateShader(const std::string fp, size_t BufferCount)
+	{
+		Shader *shader = new Shader;
+		shader->BufferCount = BufferCount;
+
+		VkDescriptorSetLayoutBinding *bindings = (VkDescriptorSetLayoutBinding *)malloc(sizeof(VkDescriptorSetLayoutBinding) * BufferCount);
+		if (!bindings) {
+			throw vkcl::util::Exception("Failed to allocate memory for Descriptor Set Layout Bindings");
+		}
+
+		for (size_t i = 0; i < BufferCount; i++) { // boiler plate code is for retards
+			bindings[i] = {};
+			bindings[i].binding = i; // 0 : input, 1 : output
+			bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			bindings[i].descriptorCount = 1;
+			bindings[i].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+			bindings[i].pImmutableSamplers = nullptr;
+		}
+
+		// struct for holding layout bindings to create layout object
+		VkDescriptorSetLayoutCreateInfo layoutcreateinfo = {};
+		layoutcreateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutcreateinfo.bindingCount = BufferCount;
+		layoutcreateinfo.pBindings = bindings;
+
+		if (vkCreateDescriptorSetLayout(device, &layoutcreateinfo, NULL, &shader->layout) != VK_SUCCESS) {
+			throw vkcl::util::Exception("Could not create descriptor set layout");
+		}
+
+		free(bindings);
+		
+		VkDescriptorPoolSize poolsize = {};
+		poolsize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		poolsize.descriptorCount = BufferCount;
+
+		VkDescriptorPoolCreateInfo poolcreateinfo = {};
+		poolcreateinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolcreateinfo.maxSets = 1;
+		poolcreateinfo.poolSizeCount = 1;
+		poolcreateinfo.pPoolSizes = &poolsize;
+
+		if (vkCreateDescriptorPool(device, &poolcreateinfo, NULL, &shader->pool) != VK_SUCCESS) {
+			throw vkcl::util::Exception("Could not create descriptor pool");
+		}
+		
+		// allocate descriptor set
+		VkDescriptorSetAllocateInfo allocinfo = {};
+		allocinfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocinfo.descriptorPool = shader->pool;
+		allocinfo.descriptorSetCount = 1;
+		allocinfo.pSetLayouts = &shader->layout;
+
+		if (vkAllocateDescriptorSets(device, &allocinfo, &shader->set) != VK_SUCCESS) {
+			throw vkcl::util::Exception("Could not allocate descriptor set ");
+		}
+
+		// Create shader module
+		uint32_t len = 0;
+		uint32_t *code = nullptr;
+		
+		try { 
+			code = GetSpv(&len, fp);
+		} catch (vkcl::util::Exception& e) {
+			throw e;
+		}
+
+		if (!code)
+			throw vkcl::util::Exception("Could not load shader code");
+
+		VkShaderModuleCreateInfo modcreateinfo = {};
+		modcreateinfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		modcreateinfo.pCode = code;
+		modcreateinfo.codeSize = len;
+
+		if (vkCreateShaderModule(device, &modcreateinfo, NULL, &shader->shadermod) != VK_SUCCESS) {
+			throw vkcl::util::Exception("Could not allocate shader module");
+		}
+
+		free(code);
+
+		// Create pipeline
+		VkPipelineLayoutCreateInfo pipelinelayoutcreateinfo = {};
+		pipelinelayoutcreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelinelayoutcreateinfo.pNext = nullptr;
+		pipelinelayoutcreateinfo.setLayoutCount = 1;
+		pipelinelayoutcreateinfo.pSetLayouts = &shader->layout;
+		
+		if (vkCreatePipelineLayout(device, &pipelinelayoutcreateinfo, nullptr, &shader->pipelinelayout) != VK_SUCCESS) {
+			throw vkcl::util::Exception("Could not create Compute Pipeline Layout");
+		}
+		
+		VkPipelineShaderStageCreateInfo shaderstagecreateinfo = {}; 
+		shaderstagecreateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		shaderstagecreateinfo.pNext = nullptr;
+		shaderstagecreateinfo.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+		shaderstagecreateinfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		shaderstagecreateinfo.module = shader->shadermod;
+		shaderstagecreateinfo.pName = "main";
+		shaderstagecreateinfo.pSpecializationInfo = nullptr;
+
+		VkComputePipelineCreateInfo pipelinecreateinfo = {};
+		pipelinecreateinfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+		pipelinecreateinfo.pNext = nullptr;
+		pipelinecreateinfo.stage = shaderstagecreateinfo;
+		pipelinecreateinfo.layout = shader->pipelinelayout;
+
+		if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelinecreateinfo, nullptr, &shader->pipeline) != VK_SUCCESS) {
+			throw vkcl::util::Exception("Could not create Compute Pipeline");
+		}
+
+		// Allocate command buffer from device
+		VkCommandBufferAllocateInfo commandbufferinfo = {};
+		commandbufferinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		commandbufferinfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		commandbufferinfo.commandPool = getCommandPool();
+		commandbufferinfo.commandBufferCount = 1;
+
+		if (vkAllocateCommandBuffers(device, &commandbufferinfo, &shader->commandbuffer) != VK_SUCCESS) {
+			throw vkcl::util::Exception(std::string("Failed to allocate command buffer for compute operation")); 
+		}
+
+		VkFenceCreateInfo fenceinfo = {};
+		fenceinfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+		fenceinfo.flags = 0;
+		vkCreateFence(device, &fenceinfo, nullptr, &shader->fence);
+
+		return shader;
+	}
+
+	void Device::DeleteShader(Shader *shader)
+	{
+		vkDestroyFence(device, shader->fence, nullptr);
+		vkFreeCommandBuffers(device, getCommandPool(), 1, &shader->commandbuffer);
+		vkDestroyPipeline(device, shader->pipeline, nullptr);
+		vkDestroyPipelineLayout(device, shader->pipelinelayout, nullptr);
+		vkDestroyShaderModule(device, shader->shadermod, nullptr);
+		vkDestroyDescriptorSetLayout(device, shader->layout, nullptr);
+		vkDestroyDescriptorPool(device, shader->pool, nullptr);		
+
+		delete shader;
+	}
+
+	void Device::BindBuffers(Shader *shader, Buffer **buffers)
+	{
+		VkDescriptorBufferInfo *bufferinfo = new VkDescriptorBufferInfo[shader->BufferCount];
+		VkWriteDescriptorSet *write = new VkWriteDescriptorSet[shader->BufferCount];
+
+		for (size_t i = 0; i < shader->BufferCount; i++) {
+			bufferinfo[i].offset = 0;
+			bufferinfo[i].range = VK_WHOLE_SIZE;
+			bufferinfo[i].buffer = buffers[i]->devbuffer;
+
+			write[i] = {};
+			write[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write[i].pNext = nullptr;
+			write[i].dstSet = shader->set;
+			write[i].dstBinding = i;
+			write[i].dstArrayElement = 0;
+			write[i].descriptorCount = 1;
+			write[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			write[i].pBufferInfo = &bufferinfo[i];			
+		}
+
+		vkUpdateDescriptorSets(device, shader->BufferCount, write, 0, NULL);
+
+		delete[] bufferinfo;
+		delete[] write;
+	}
+
+	void Device::RunShader(Shader *shader, uint32_t x, uint32_t y, uint32_t z)
+	{
+		VkCommandBufferBeginInfo begininfo = {};
+		begininfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		begininfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		vkBeginCommandBuffer(shader->commandbuffer, &begininfo);
+
+		// VK COMMANDS START
+
+		vkCmdBindPipeline(shader->commandbuffer, VK_PIPELINE_BIND_POINT_COMPUTE, shader->pipeline);
+		vkCmdBindDescriptorSets(shader->commandbuffer, VK_PIPELINE_BIND_POINT_COMPUTE, shader->pipelinelayout, 0, 1, &shader->set, 0, nullptr);
+		vkCmdDispatch(shader->commandbuffer, x, y, z);
+
+		// VK COMMANDS END
+
+		vkEndCommandBuffer(shader->commandbuffer);
+
+		VkSubmitInfo submitinfo = {};
+		submitinfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitinfo.commandBufferCount = 1;
+		submitinfo.pCommandBuffers = &shader->commandbuffer;
+
+		vkQueueSubmit(getComputeQueue(), 1, &submitinfo, shader->fence);
+		vkWaitForFences(device, 1, &shader->fence, VK_TRUE, UINT64_MAX);
+		vkResetFences(device, 1, &shader->fence);		
 	}
 
 

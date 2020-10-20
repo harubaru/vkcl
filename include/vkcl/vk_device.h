@@ -21,6 +21,18 @@ namespace vkcl {
 		VmaAllocationInfo devinfo;
 	};
 
+	struct Shader {
+		size_t BufferCount;
+		VkCommandBuffer commandbuffer;
+		VkShaderModule shadermod;
+		VkPipeline pipeline;
+		VkPipelineLayout pipelinelayout;
+		VkDescriptorPool pool;
+		VkDescriptorSet set;
+		VkDescriptorSetLayout layout;
+		VkFence fence;
+	};
+
 	class Device {
 	public:
 		Device() { }
@@ -32,11 +44,18 @@ namespace vkcl {
 		void Load(VkInstance instance, VkPhysicalDevice PhysicalDevice);
 		uint32_t MemoryType(uint32_t Type, VkMemoryPropertyFlags Props);
 
+		// Buffer Operations
 		Buffer *CreateBuffer(VkDeviceSize size);
 		void  DeleteBuffer(Buffer *buffer);
 		void  UploadData(Buffer *buffer, void *data);
 		void *DownloadData(Buffer *buffer);
 		void  ReleaseData(void *data);
+
+		// Compute Operations
+		Shader *CreateShader(const std::string fp, size_t BufferCount);
+		void DeleteShader(Shader *shader);
+		void BindBuffers(Shader *shader, Buffer **buffers);
+		void RunShader(Shader *shader, uint32_t x, uint32_t y, uint32_t z);
 
 		inline void setId(uint32_t id) { this->id = id; }
 		inline uint32_t getId() { return id; }

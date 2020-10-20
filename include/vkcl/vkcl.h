@@ -5,6 +5,5 @@
 #include "util_logging.h"
 #include "vk_device.h"
 #include "vk_instance.h"
-#include "vk_shader.h"
 
 #endif
