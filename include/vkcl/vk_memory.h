@@ -2045,9 +2045,9 @@ available through VmaAllocatorCreateInfo::pRecordSettings.
     #endif // #if VMA_VULKAN_VERSION >= 1001000
 #endif // #if defined(__ANDROID__) && VMA_STATIC_VULKAN_FUNCTIONS && VK_NO_PROTOTYPES
 
-#ifndef VULKAN_H_
-    #include <vulkan/vulkan.h>
-#endif
+//#ifndef VULKAN_H_
+    #include "volk.h"
+//#endif
 
 // Define this macro to declare maximum supported Vulkan version in format AAABBBCCC,
 // where AAA = major, BBB = minor, CCC = patch.
@@ -2288,10 +2288,10 @@ typedef enum VmaAllocatorCreateFlagBits {
     1. (For Vulkan version < 1.2) Found as available and enabled device extension
     VK_KHR_buffer_device_address.
     This extension is promoted to core Vulkan 1.2.
-    2. Found as available and enabled device feature `VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress`.
+    2. Found as available and enabled device feature `VkPhysicalDeviceBufferDeviceAddressFeatures*::bufferDeviceAddress`.
 
-    When this flag is set, you can create buffers with `VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT` using VMA.
-    The library automatically adds `VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT` to
+    When this flag is set, you can create buffers with `VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT*` using VMA.
+    The library automatically adds `VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT*` to
     allocated memory blocks wherever it might be needed.
 
     For more information, see documentation chapter \ref enabling_buffer_device_address.
@@ -7858,6 +7858,7 @@ public:
     {
         return m_AllocationCallbacksSpecified ? &m_AllocationCallbacks : 0;
     }
+    
     const VmaVulkanFunctions& GetVulkanFunctions() const
     {
         return m_VulkanFunctions;

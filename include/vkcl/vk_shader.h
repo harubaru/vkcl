@@ -3,7 +3,6 @@
 
 #include "util_exception.h"
 #include "vk_device.h"
-#include "vk_buffer.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -20,7 +19,7 @@ namespace vkcl {
 		void Delete();
 		~Shader();
 
-		void BindBuffers(Buffer *buffers);
+//		void BindBuffers(Buffer *buffers);
 		void Run(uint32_t x, uint32_t y, uint32_t z);
 	protected:
 		bool freed;

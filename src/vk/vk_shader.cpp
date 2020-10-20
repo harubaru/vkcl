@@ -184,7 +184,7 @@ namespace vkcl {
 		Delete();
 	}
 
-	void Shader::BindBuffers(Buffer *buffers)
+/*	void Shader::BindBuffers(Buffer *buffers)
 	{
 		VkDescriptorBufferInfo *bufferinfo = (VkDescriptorBufferInfo *)malloc(sizeof(VkDescriptorBufferInfo) * BufferCount);
 
@@ -213,7 +213,7 @@ namespace vkcl {
 		free(bufferinfo);
 		free(write);
 	}
-
+*/
 	void Shader::Run(uint32_t x, uint32_t y, uint32_t z)
 	{
 		VkCommandBufferBeginInfo begininfo = {};
