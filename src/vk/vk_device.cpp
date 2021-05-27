@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <math.h>
+#include <cmath>
+#include <cstring>
 #include <vkcl/vk_device.h>
 
 namespace vkcl {
@@ -45,7 +45,7 @@ namespace vkcl {
 		fseek(f, 0, SEEK_END);
 		uint32_t size = (unsigned)ftell(f);
 		fseek(f, 0, SEEK_SET);
-		uint32_t size_padded = (uint32_t)ceil(size / 4.0) * 4;
+		uint32_t size_padded = (uint32_t)std::ceil(size / 4.0) * 4;
 		*len = size_padded;
 
 		// read file
@@ -384,7 +384,7 @@ namespace vkcl {
 		VmaAllocationInfo allocinfo;
 
 		CreateVKBuffer(buffer->devinfo.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, hostbuf, hostalloc, &allocinfo);
-		memcpy(allocinfo.pMappedData, data, buffer->devinfo.size);
+		std::memcpy(allocinfo.pMappedData, data, buffer->devinfo.size);
 		CopyVKBuffer(hostbuf, buffer->devbuffer, buffer->devinfo.size);
 
 		vmaDestroyBuffer(allocator, hostbuf, hostalloc);
@@ -400,7 +400,7 @@ namespace vkcl {
 
 		CreateVKBuffer(buffer->devinfo.size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, hostbuf, hostalloc, &allocinfo);
 		CopyVKBuffer(buffer->devbuffer, hostbuf, buffer->devinfo.size);
-		memcpy(data, allocinfo.pMappedData, allocinfo.size);
+		std::memcpy(data, allocinfo.pMappedData, allocinfo.size);
 		vmaDestroyBuffer(allocator, hostbuf, hostalloc);
 
 		return data;
