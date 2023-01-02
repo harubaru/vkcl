@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstring>
 #include <vkcl/vk_device.h>
+#include <cstring>
 
 namespace vkcl {
 
